@@ -260,7 +260,7 @@ func outer(t *testing.T, test types.Test, negativeTests bool) error {
 	// If we're not expecting the config to be bad, make sure it passes
 	// validation.
 	if !test.ConfigShouldBeBad {
-		_, rpt, err := config.Parse([]byte(test.Config))
+		_, rpt, _, err := config.Parse([]byte(test.Config))
 		if rpt.IsFatal() {
 			return fmt.Errorf("test has bad config: %s", rpt.String())
 		}

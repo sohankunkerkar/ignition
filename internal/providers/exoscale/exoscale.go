@@ -36,10 +36,10 @@ var (
 )
 
 // FetchConfig fetch Exoscale ign user-data config
-func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
+func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, []byte, error) {
 	data, err := f.FetchToBuffer(userdataURL, resource.FetchOptions{})
 	if err != nil && err != resource.ErrNotFound {
-		return types.Config{}, report.Report{}, err
+		return types.Config{}, report.Report{}, nil, err
 	}
 
 	return util.ParseConfig(f.Logger, data)

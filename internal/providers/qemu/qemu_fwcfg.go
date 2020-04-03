@@ -36,10 +36,10 @@ const (
 	firmwareConfigPath = "/sys/firmware/qemu_fw_cfg/by_name/opt/com.coreos/config/raw"
 )
 
-func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
+func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, []byte, error) {
 	_, err := f.Logger.LogCmd(exec.Command("modprobe", "qemu_fw_cfg"), "loading QEMU firmware config module")
 	if err != nil {
-		return types.Config{}, report.Report{}, err
+		return types.Config{}, report.Report{}, nil, err
 	}
 
 	data, err := ioutil.ReadFile(firmwareConfigPath)
@@ -47,7 +47,7 @@ func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
 		f.Logger.Info("QEMU firmware config was not found. Ignoring...")
 	} else if err != nil {
 		f.Logger.Err("couldn't read QEMU firmware config: %v", err)
-		return types.Config{}, report.Report{}, err
+		return types.Config{}, report.Report{}, nil, err
 	}
 
 	return util.ParseConfig(f.Logger, data)

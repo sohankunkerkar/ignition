@@ -30,7 +30,7 @@ const (
 	defaultFilename   = "config.ign"
 )
 
-func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
+func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, []byte, error) {
 	filename := os.Getenv(cfgFilenameEnvVar)
 	if filename == "" {
 		filename = defaultFilename
@@ -41,7 +41,7 @@ func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
 	rawConfig, err := ioutil.ReadFile(filename)
 	if err != nil {
 		f.Logger.Err("couldn't read config %q: %v", filename, err)
-		return types.Config{}, report.Report{}, err
+		return types.Config{}, report.Report{}, nil, err
 	}
 	return util.ParseConfig(f.Logger, rawConfig)
 }

@@ -52,7 +52,7 @@ var (
 	}
 )
 
-func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
+func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, []byte, error) {
 	// Packet's metadata service returns "Not Acceptable" when queried
 	// with the default Accept header.
 	headers := make(http.Header)
@@ -61,7 +61,7 @@ func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
 		Headers: headers,
 	})
 	if err != nil {
-		return types.Config{}, report.Report{}, err
+		return types.Config{}, report.Report{}, nil, err
 	}
 
 	return util.ParseConfig(f.Logger, data)

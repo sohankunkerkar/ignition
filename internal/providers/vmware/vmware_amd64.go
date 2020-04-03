@@ -26,25 +26,25 @@ import (
 	"github.com/coreos/vcontext/report"
 	"github.com/vmware/vmw-guestinfo/rpcvmx"
 	"github.com/vmware/vmw-guestinfo/vmcheck"
-	"github.com/vmware/vmw-ovflib"
+	ovf "github.com/vmware/vmw-ovflib"
 )
 
-func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
+func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, []byte, error) {
 	if isVM, err := vmcheck.IsVirtualWorld(); err != nil {
-		return types.Config{}, report.Report{}, err
+		return types.Config{}, report.Report{}, nil, err
 	} else if !isVM {
-		return types.Config{}, report.Report{}, providers.ErrNoProvider
+		return types.Config{}, report.Report{}, nil, providers.ErrNoProvider
 	}
 
 	config, err := fetchRawConfig(f)
 	if err != nil {
-		return types.Config{}, report.Report{}, err
+		return types.Config{}, report.Report{}, nil, err
 	}
 
 	decodedData, err := decodeConfig(config)
 	if err != nil {
 		f.Logger.Debug("failed to decode config: %v", err)
-		return types.Config{}, report.Report{}, err
+		return types.Config{}, report.Report{}, nil, err
 	}
 
 	f.Logger.Debug("config successfully fetched")

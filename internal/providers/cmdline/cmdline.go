@@ -36,25 +36,25 @@ const (
 	cmdlineUrlFlag = "ignition.config.url"
 )
 
-func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
-	url, err := readCmdline(f.Logger)
+func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, []byte, error) {
+	url, err := ReadCmdline(f.Logger)
 	if err != nil {
-		return types.Config{}, report.Report{}, err
+		return types.Config{}, report.Report{}, nil, err
 	}
 
 	if url == nil {
-		return types.Config{}, report.Report{}, providers.ErrNoProvider
+		return types.Config{}, report.Report{}, nil, providers.ErrNoProvider
 	}
 
 	data, err := f.FetchToBuffer(*url, resource.FetchOptions{})
 	if err != nil {
-		return types.Config{}, report.Report{}, err
+		return types.Config{}, report.Report{}, nil, err
 	}
 
 	return util.ParseConfig(f.Logger, data)
 }
 
-func readCmdline(logger *log.Logger) (*url.URL, error) {
+func ReadCmdline(logger *log.Logger) (*url.URL, error) {
 	args, err := ioutil.ReadFile(distro.KernelCmdlinePath())
 	if err != nil {
 		logger.Err("couldn't read cmdline: %v", err)

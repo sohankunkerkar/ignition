@@ -52,7 +52,7 @@ const (
 	CDS_DISC_OK
 )
 
-func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
+func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, []byte, error) {
 	devicePath := filepath.Join(distro.DiskByIDDir(), configDeviceID)
 
 	logger := f.Logger
@@ -61,7 +61,7 @@ func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
 
 	mnt, err := ioutil.TempDir("", "ignition-azure")
 	if err != nil {
-		return types.Config{}, report.Report{}, fmt.Errorf("failed to create temp directory: %v", err)
+		return types.Config{}, report.Report{}, nil, fmt.Errorf("failed to create temp directory: %v", err)
 	}
 	defer os.Remove(mnt)
 
@@ -70,7 +70,7 @@ func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
 		func() error { return unix.Mount(devicePath, mnt, "udf", unix.MS_RDONLY, "") },
 		"mounting %q at %q", devicePath, mnt,
 	); err != nil {
-		return types.Config{}, report.Report{}, fmt.Errorf("failed to mount device %q at %q: %v", devicePath, mnt, err)
+		return types.Config{}, report.Report{}, nil, fmt.Errorf("failed to mount device %q at %q: %v", devicePath, mnt, err)
 	}
 	defer logger.LogOp(
 		func() error { return unix.Unmount(mnt, 0) },
@@ -80,7 +80,7 @@ func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
 	logger.Debug("reading config")
 	rawConfig, err := ioutil.ReadFile(filepath.Join(mnt, configPath))
 	if err != nil && !os.IsNotExist(err) {
-		return types.Config{}, report.Report{}, fmt.Errorf("failed to read config: %v", err)
+		return types.Config{}, report.Report{}, nil, fmt.Errorf("failed to read config: %v", err)
 	}
 
 	return util.ParseConfig(logger, rawConfig)

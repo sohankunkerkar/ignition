@@ -38,14 +38,14 @@ var (
 	metadataHeaderVal = "Google"
 )
 
-func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
+func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, []byte, error) {
 	headers := make(http.Header)
 	headers.Set(metadataHeaderKey, metadataHeaderVal)
 	data, err := f.FetchToBuffer(userdataUrl, resource.FetchOptions{
 		Headers: headers,
 	})
 	if err != nil && err != resource.ErrNotFound {
-		return types.Config{}, report.Report{}, err
+		return types.Config{}, report.Report{}, nil, err
 	}
 
 	return util.ParseConfig(f.Logger, data)

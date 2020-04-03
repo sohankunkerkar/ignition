@@ -71,7 +71,7 @@ func (e Engine) Run(stageName string) error {
 		Ignition: types.Ignition{Version: types.MaxVersion.String()},
 	}
 
-	systemBaseConfig, r, err := system.FetchBaseConfig(e.Logger)
+	systemBaseConfig, r, rawConfig, err := system.FetchBaseConfig(e.Logger)
 	e.logReport(r)
 	if err != nil && err != providers.ErrNoProvider {
 		e.Logger.Crit("failed to acquire system base config: %v", err)
@@ -92,10 +92,6 @@ func (e Engine) Run(stageName string) error {
 	}
 	if !haveConfig {
 		path := filepath.Join(distro.SystemConfigDir(), "base.ign")
-		rawConfig, err := ioutil.ReadFile(path)
-		if err != nil {
-			return err
-		}
 		hash := sha512.Sum512(rawConfig)
 		logStructuredJournalEntry("base", path, hex.EncodeToString(hash[:]))
 	}
@@ -210,22 +206,21 @@ func (e *Engine) acquireConfig() (cfg types.Config, err error) {
 // is unavailable. This will also render the config (see renderConfig) before
 // returning.
 func (e *Engine) fetchProviderConfig() (types.Config, error) {
-	fetchers := []providers.FuncFetchConfig{
-		cmdline.FetchConfig,
-		system.FetchConfig,
-		e.PlatformConfig.FetchFunc(),
+	url, _ := cmdline.ReadCmdline(e.Fetcher.Logger)
+	fetchers := map[string]providers.FuncFetchConfig{
+		url.Path: cmdline.FetchConfig,
+		filepath.Join(distro.SystemConfigDir(), "user.ign"): system.FetchConfig,
+		e.PlatformConfig.Name():                             e.PlatformConfig.FetchFunc(),
 	}
-	// fetchers := map[string]providers.FuncFetchConfig{
-	// 	"abc": cmdline.FetchConfig,
-	// 	filepath.Join(distro.SystemConfigDir(), "user.ign"): system.FetchConfig,
-	// 	e.PlatformConfig.Name():                             e.PlatformConfig.FetchFunc(),
-	// }
 	var cfg types.Config
 	var r report.Report
 	var err error
-	for _, fetcher := range fetchers {
-		cfg, r, err = fetcher(e.Fetcher)
+	var rawCfg []byte
+	var path string
+	for val, fetcher := range fetchers {
+		cfg, r, rawCfg, err = fetcher(e.Fetcher)
 		if err != providers.ErrNoProvider {
+			path = val
 			// successful, or failed on another error
 			break
 		}
@@ -235,8 +230,8 @@ func (e *Engine) fetchProviderConfig() (types.Config, error) {
 	if err != nil {
 		return types.Config{}, err
 	}
-
-	logStructuredJournalEntry("user", "abc", "xyz")
+	hash := sha512.Sum512(rawCfg)
+	logStructuredJournalEntry("user", path, hex.EncodeToString(hash[:]))
 	// Replace the HTTP client in the fetcher to be configured with the
 	// timeouts of the config
 	err = e.Fetcher.UpdateHttpTimeoutsAndCAs(cfg.Ignition.Timeouts, cfg.Ignition.Security.TLS.CertificateAuthorities, cfg.Ignition.Proxy)
@@ -332,7 +327,7 @@ func (e *Engine) fetchReferencedConfig(cfgRef types.ConfigReference) (types.Conf
 		return types.Config{}, err
 	}
 
-	cfg, r, err := config.Parse(rawCfg)
+	cfg, r, _, err := config.Parse(rawCfg)
 	e.logReport(r)
 	if err != nil {
 		return types.Config{}, err

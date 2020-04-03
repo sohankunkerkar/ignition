@@ -40,10 +40,10 @@ var (
 	}
 )
 
-func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
+func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, []byte, error) {
 	data, err := f.FetchToBuffer(userdataUrl, resource.FetchOptions{})
 	if err != nil && err != resource.ErrNotFound {
-		return types.Config{}, report.Report{}, err
+		return types.Config{}, report.Report{}, nil, err
 	}
 
 	// Determine the partition and region this instance is in

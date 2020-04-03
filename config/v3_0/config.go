@@ -38,28 +38,28 @@ func Merge(parent, child types.Config) types.Config {
 
 // Parse parses the raw config into a types.Config struct and generates a report of any
 // errors, warnings, info, and deprecations it encountered
-func Parse(rawConfig []byte) (types.Config, report.Report, error) {
+func Parse(rawConfig []byte) (types.Config, report.Report, []byte, error) {
 	if isEmpty(rawConfig) {
-		return types.Config{}, report.Report{}, errors.ErrEmpty
+		return types.Config{}, report.Report{}, rawConfig, errors.ErrEmpty
 	}
 
 	var config types.Config
 	if rpt, err := util.HandleParseErrors(rawConfig, &config); err != nil {
-		return types.Config{}, rpt, err
+		return types.Config{}, rpt, rawConfig, err
 	}
 
 	version, err := semver.NewVersion(config.Ignition.Version)
 
 	if err != nil || *version != types.MaxVersion {
-		return types.Config{}, report.Report{}, errors.ErrUnknownVersion
+		return types.Config{}, report.Report{}, rawConfig, errors.ErrUnknownVersion
 	}
 
 	rpt := validate.ValidateWithContext(config, rawConfig)
 	if rpt.IsFatal() {
-		return types.Config{}, rpt, errors.ErrInvalid
+		return types.Config{}, rpt, rawConfig, errors.ErrInvalid
 	}
 
-	return config, rpt, nil
+	return config, rpt, rawConfig, nil
 }
 
 func isEmpty(userdata []byte) bool {

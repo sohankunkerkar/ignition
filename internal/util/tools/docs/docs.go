@@ -62,7 +62,7 @@ func main() {
 		jsonSections := findJsonSections(fileLines)
 
 		for _, json := range jsonSections {
-			_, r, _ := config.Parse([]byte(strings.Join(json, "\n")))
+			_, r, _, _ := config.Parse([]byte(strings.Join(json, "\n")))
 			reportStr := r.String()
 			if reportStr != "" {
 				return fmt.Errorf("non-empty parsing report in %s: %s", info.Name(), reportStr)

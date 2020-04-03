@@ -35,20 +35,20 @@ type versionStub struct {
 
 // Parse parses a config of any supported version and returns the equivalent config at the latest
 // supported version.
-func Parse(raw []byte) (types_exp.Config, report.Report, error) {
+func Parse(raw []byte) (types_exp.Config, report.Report, []byte, error) {
 	if len(raw) == 0 {
-		return types_exp.Config{}, report.Report{}, errors.ErrEmpty
+		return types_exp.Config{}, report.Report{}, raw, errors.ErrEmpty
 	}
 
 	stub := versionStub{}
 	rpt, err := util.HandleParseErrors(raw, &stub)
 	if err != nil {
-		return types_exp.Config{}, rpt, err
+		return types_exp.Config{}, rpt, raw, err
 	}
 
 	version, err := semver.NewVersion(stub.Ignition.Version)
 	if err != nil {
-		return types_exp.Config{}, report.Report{}, errors.ErrInvalidVersion
+		return types_exp.Config{}, report.Report{}, raw, errors.ErrInvalidVersion
 	}
 
 	switch *version {
@@ -57,13 +57,13 @@ func Parse(raw []byte) (types_exp.Config, report.Report, error) {
 	case types_3_0.MaxVersion:
 		return from3_0(v3_0.Parse(raw))
 	default:
-		return types_exp.Config{}, report.Report{}, errors.ErrUnknownVersion
+		return types_exp.Config{}, report.Report{}, raw, errors.ErrUnknownVersion
 	}
 }
 
-func from3_0(cfg types_3_0.Config, r report.Report, err error) (types_exp.Config, report.Report, error) {
+func from3_0(cfg types_3_0.Config, r report.Report, rawCfg []byte, err error) (types_exp.Config, report.Report, []byte, error) {
 	if err != nil {
-		return types_exp.Config{}, r, err
+		return types_exp.Config{}, r, rawCfg, err
 	}
-	return trans_exp.Translate(cfg), r, nil
+	return trans_exp.Translate(cfg), r, rawCfg, nil
 }

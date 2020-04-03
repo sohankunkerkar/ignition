@@ -35,6 +35,6 @@ func Validate(filename string) (report.Report, error) {
 		return report.Report{}, err
 	}
 
-	_, r, err := config.Parse(b)
+	_, r, _, err := config.Parse(b)
 	return r, err
 }

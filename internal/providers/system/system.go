@@ -34,25 +34,25 @@ const (
 	userFilename = "user.ign"
 )
 
-func FetchBaseConfig(logger *log.Logger) (types.Config, report.Report, error) {
+func FetchBaseConfig(logger *log.Logger) (types.Config, report.Report, []byte, error) {
 	return fetchConfig(logger, baseFilename)
 }
 
-func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
+func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, []byte, error) {
 	return fetchConfig(f.Logger, userFilename)
 }
 
-func fetchConfig(logger *log.Logger, filename string) (types.Config, report.Report, error) {
+func fetchConfig(logger *log.Logger, filename string) (types.Config, report.Report, []byte, error) {
 	path := filepath.Join(distro.SystemConfigDir(), filename)
 	logger.Info("reading system config file %q", path)
 
 	rawConfig, err := ioutil.ReadFile(path)
 	if os.IsNotExist(err) {
 		logger.Info("no config at %q", path)
-		return types.Config{}, report.Report{}, providers.ErrNoProvider
+		return types.Config{}, report.Report{}, rawConfig, providers.ErrNoProvider
 	} else if err != nil {
 		logger.Err("couldn't read config %q: %v", path, err)
-		return types.Config{}, report.Report{}, err
+		return types.Config{}, report.Report{}, nil, err
 	}
 	return util.ParseConfig(logger, rawConfig)
 }

@@ -36,15 +36,15 @@ const (
 	partUUID = "99570a8a-f826-4eb0-ba4e-9dd72d55ea13"
 )
 
-func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
+func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, []byte, error) {
 	f.Logger.Debug("Attempting to read config drive")
 	rawConfig, err := ioutil.ReadFile(filepath.Join(distro.DiskByPartUUIDDir(), partUUID))
 	if os.IsNotExist(err) {
 		f.Logger.Info("Path to ignition config does not exist, assuming no config")
-		return types.Config{}, report.Report{}, errors.ErrEmpty
+		return types.Config{}, report.Report{}, nil, errors.ErrEmpty
 	} else if err != nil {
 		f.Logger.Err("Error reading ignition config: %v", err)
-		return types.Config{}, report.Report{}, err
+		return types.Config{}, report.Report{}, nil, err
 	}
 	trimmedConfig := bytes.TrimRight(rawConfig, "\x00")
 	return util.ParseConfig(f.Logger, trimmedConfig)

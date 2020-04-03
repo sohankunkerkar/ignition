@@ -76,7 +76,7 @@ func runIgnValidate(args []string) {
 	if err != nil {
 		die("couldn't read config: %v", err)
 	}
-	_, rpt, err := config.Parse(blob)
+	_, rpt, _, err := config.Parse(blob)
 	if len(rpt.Entries) > 0 {
 		stdout(rpt.String())
 	}

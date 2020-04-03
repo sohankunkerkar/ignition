@@ -25,7 +25,7 @@ import (
 	"github.com/coreos/vcontext/report"
 )
 
-func ParseConfig(logger *log.Logger, rawConfig []byte) (types.Config, report.Report, error) {
+func ParseConfig(logger *log.Logger, rawConfig []byte) (types.Config, report.Report, []byte, error) {
 	hash := sha512.Sum512(rawConfig)
 	logger.Debug("parsing config with SHA512: %s", hex.EncodeToString(hash[:]))
 

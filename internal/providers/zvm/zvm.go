@@ -35,26 +35,26 @@ import (
 
 const readerDevice string = "000c"
 
-func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
+func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, []byte, error) {
 	// Fetch config files directly from reader device.
 	_, err := f.Logger.LogCmd(exec.Command(distro.ModprobeCmd(), "vmur"), "Loading zVM control program module")
 	if err != nil {
 		f.Logger.Err("Couldn't install vmur module: %v", err)
 		errors := fmt.Errorf("Couldn't install vmur module: %v", err)
-		return types.Config{}, report.Report{}, errors
+		return types.Config{}, report.Report{}, nil, errors
 	}
 	// Online the reader device.
 	logger := f.Logger
 	err = onlineDevice(logger)
 	if err != nil {
-		return types.Config{}, report.Report{}, err
+		return types.Config{}, report.Report{}, nil, err
 	}
 	// Read files from the z/VM reader queue.
 	readerInfo, err := exec.Command(distro.VmurCmd(), "li").CombinedOutput()
 	if err != nil {
 		f.Logger.Err("Can not get reader device: %v", err)
 		errors := fmt.Errorf("Can not get reader device: %v", err)
-		return types.Config{}, report.Report{}, errors
+		return types.Config{}, report.Report{}, nil, errors
 	}
 	for _, records := range strings.Split(string(readerInfo), "\n") {
 		record := strings.Fields(records)
@@ -72,7 +72,7 @@ func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
 		if ftype == "ign" {
 			_, err := f.Logger.LogCmd(exec.Command(distro.VmurCmd(), "re", "-f", spoolid, file), "Receive the spool file")
 			if err != nil {
-				return types.Config{}, report.Report{}, err
+				return types.Config{}, report.Report{}, nil, err
 			}
 			f.Logger.Info("using config file at %q", file)
 			rawConfig, err := ioutil.ReadFile(file)
@@ -84,7 +84,7 @@ func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
 			return util.ParseConfig(f.Logger, jsonConfig)
 		}
 	}
-	return types.Config{}, report.Report{}, errors.ErrEmpty
+	return types.Config{}, report.Report{}, nil, errors.ErrEmpty
 }
 
 func onlineDevice(logger *log.Logger) error {

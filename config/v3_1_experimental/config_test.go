@@ -103,7 +103,7 @@ func TestParse(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		config, report, err := Parse(test.in.config)
+		config, report, _, err := Parse(test.in.config)
 		if (!test.out.checkOnStrings && test.out.err != err) ||
 			(test.out.checkOnStrings && test.out.err.Error() != err.Error()) {
 			t.Errorf("#%d: bad error: want %v, got %v, report: %+v", i, test.out.err, err, report)
