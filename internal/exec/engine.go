@@ -23,12 +23,15 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"time"
 
+	"github.com/coreos/go-systemd/journal"
 	"github.com/coreos/ignition/v2/config"
 	"github.com/coreos/ignition/v2/config/shared/errors"
 	latest "github.com/coreos/ignition/v2/config/v3_1_experimental"
 	"github.com/coreos/ignition/v2/config/v3_1_experimental/types"
+	"github.com/coreos/ignition/v2/internal/distro"
 	"github.com/coreos/ignition/v2/internal/exec/stages"
 	"github.com/coreos/ignition/v2/internal/log"
 	"github.com/coreos/ignition/v2/internal/platform"
@@ -82,7 +85,20 @@ func (e Engine) Run(stageName string) error {
 		e.Logger.Crit("failed to acquire config: %v", err)
 		return err
 	}
-
+	var haveConfig bool
+	// Check to see if we already have a config cache
+	if _, err := os.Stat(e.ConfigCache); err != nil {
+		haveConfig = true
+	}
+	if !haveConfig {
+		path := filepath.Join(distro.SystemConfigDir(), "base.ign")
+		rawConfig, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		hash := sha512.Sum512(rawConfig)
+		logStructuredJournalEntry("base.ign", path, hex.EncodeToString(hash[:]))
+	}
 	e.Logger.PushPrefix(stageName)
 	defer e.Logger.PopPrefix()
 
@@ -101,6 +117,11 @@ func (e Engine) Run(stageName string) error {
 	}
 	e.Logger.Info("%s passed", stageName)
 	return nil
+}
+
+func logStructuredJournalEntry(config string, path string, hash string) {
+	journal.Send(fmt.Sprintf("%q config is fetched", config), journal.PriInfo, map[string]string{path: hash})
+	return
 }
 
 // acquireConfig returns the configuration, first checking a local cache
@@ -189,7 +210,11 @@ func (e *Engine) fetchProviderConfig() (types.Config, error) {
 		system.FetchConfig,
 		e.PlatformConfig.FetchFunc(),
 	}
-
+	// fetchers := map[string]providers.FuncFetchConfig{
+	// 	"abc": cmdline.FetchConfig,
+	// 	filepath.Join(distro.SystemConfigDir(), "user.ign"): system.FetchConfig,
+	// 	e.PlatformConfig.Name():                             e.PlatformConfig.FetchFunc(),
+	// }
 	var cfg types.Config
 	var r report.Report
 	var err error
@@ -206,6 +231,7 @@ func (e *Engine) fetchProviderConfig() (types.Config, error) {
 		return types.Config{}, err
 	}
 
+	logStructuredJournalEntry("user.ign", "abc", "xyz")
 	// Replace the HTTP client in the fetcher to be configured with the
 	// timeouts of the config
 	err = e.Fetcher.UpdateHttpTimeoutsAndCAs(cfg.Ignition.Timeouts, cfg.Ignition.Security.TLS.CertificateAuthorities, cfg.Ignition.Proxy)
@@ -294,6 +320,8 @@ func (e *Engine) fetchReferencedConfig(cfgRef types.ConfigReference) (types.Conf
 		// data url's might contain secrets
 		e.Logger.Debug("fetched referenced config from data url with SHA512: %s", hex.EncodeToString(hash[:]))
 	}
+
+	logStructuredJournalEntry("user-referenced", u.Path, hex.EncodeToString(hash[:]))
 
 	if err := util.AssertValid(cfgRef.Verification, rawCfg); err != nil {
 		return types.Config{}, err
