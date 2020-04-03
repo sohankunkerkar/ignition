@@ -97,7 +97,7 @@ func (e Engine) Run(stageName string) error {
 			return err
 		}
 		hash := sha512.Sum512(rawConfig)
-		logStructuredJournalEntry("base.ign", path, hex.EncodeToString(hash[:]))
+		logStructuredJournalEntry("base", path, hex.EncodeToString(hash[:]))
 	}
 	e.Logger.PushPrefix(stageName)
 	defer e.Logger.PopPrefix()
@@ -120,7 +120,12 @@ func (e Engine) Run(stageName string) error {
 }
 
 func logStructuredJournalEntry(config string, path string, hash string) {
-	journal.Send(fmt.Sprintf("%q config is fetched", config), journal.PriInfo, map[string]string{path: hash})
+	ignitionInfo := map[string]string{
+		"IGNITION_FETCH_CONFIG_PATH": path,
+		"IGNITION_FETCH_CONFIG_HASH": hash,
+	}
+	msg := fmt.Sprintf("%q config is fetched", config)
+	journal.Send(msg, journal.PriInfo, ignitionInfo)
 	return
 }
 
@@ -231,7 +236,7 @@ func (e *Engine) fetchProviderConfig() (types.Config, error) {
 		return types.Config{}, err
 	}
 
-	logStructuredJournalEntry("user.ign", "abc", "xyz")
+	logStructuredJournalEntry("user", "abc", "xyz")
 	// Replace the HTTP client in the fetcher to be configured with the
 	// timeouts of the config
 	err = e.Fetcher.UpdateHttpTimeoutsAndCAs(cfg.Ignition.Timeouts, cfg.Ignition.Security.TLS.CertificateAuthorities, cfg.Ignition.Proxy)
