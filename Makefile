@@ -31,3 +31,6 @@ install: all
 vendor:
 	@go mod vendor
 	@go mod tidy
+.PHONY: lint
+lint:
+	golangci-lint run -c .golangci.yml --fix
