@@ -87,7 +87,7 @@ func main() {
 // skipGroupName will skip the groupname from `/etc/{group/gshadow}`file which
 // needs to be deleted from the system.
 func skipGroupName(content []byte, colon int, username string) ([]string, error) {
-	var finalContents []string
+	finalContents := make([]string, 0, len(content))
 	contents := strings.Split(string(content), "\n")
 	for i, l := range contents {
 		if i == len(contents)-1 {

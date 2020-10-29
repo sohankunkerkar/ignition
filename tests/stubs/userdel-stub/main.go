@@ -138,7 +138,7 @@ func main() {
 // skipUserName will skip the username from `/etc/{group/passwd/shadow/gshadow}`
 // file which needs to be deleted from the system.
 func skipUserName(content []byte, colon int, username string) ([]string, error) {
-	var finalContents []string
+	finalContents := make([]string, len(content))
 	contents := strings.Split(string(content), "\n")
 	for i, l := range contents {
 		if i == len(contents)-1 {
