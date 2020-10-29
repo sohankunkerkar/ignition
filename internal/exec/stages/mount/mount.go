@@ -93,7 +93,7 @@ func checkForNonDirectories(path string) error {
 			return err
 		}
 		if !st.Mode().IsDir() {
-			return fmt.Errorf("Mount path %q contains non-directory component %q", path, p)
+			return fmt.Errorf("mount path %q contains non-directory component %q", path, p)
 		}
 	}
 	return nil
@@ -145,7 +145,7 @@ func (s stage) mountFs(fs types.Filesystem) error {
 	if distro.SelinuxRelabel() {
 		// relabel the root of the disk if it's fresh
 		if isEmpty, err := util.DirIsEmpty(path); err != nil {
-			return fmt.Errorf("Checking if directory %s is empty: %v", path, err)
+			return fmt.Errorf("checking if directory %s is empty: %v", path, err)
 		} else if isEmpty {
 			if err := s.RelabelFiles([]string{path}); err != nil {
 				return err

@@ -124,7 +124,7 @@ func cResultToErr(res C.result_t, device string) error {
 	case C.RESULT_BAD_SECTOR_SIZE:
 		return fmt.Errorf("logical sector size for %q was not a multiple of 512", device)
 	default:
-		return fmt.Errorf("Unknown error while handling %q. err code: %d", device, res)
+		return fmt.Errorf("unknown error while handling %q. err code: %d", device, res)
 	}
 }
 

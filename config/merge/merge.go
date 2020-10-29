@@ -194,8 +194,6 @@ func MergeStruct(parent, child reflect.Value) reflect.Value {
 						} else {
 							panic("List of pointers or slices or something else weird")
 						}
-					} else {
-						// case 2: in child config in different list. Do nothing since it'll be handled iterating over that list
 					}
 				} else {
 					// case 3: not in child config, append it

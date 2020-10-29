@@ -88,15 +88,15 @@ func partitionMatchesResize(existing util.PartitionInfo, spec sgdisk.Partition) 
 // if the existing partition matches the spec given.
 func partitionMatchesCommon(existing util.PartitionInfo, spec sgdisk.Partition) error {
 	if spec.Number != existing.Number {
-		return fmt.Errorf("partition numbers did not match (specified %d, got %d). This should not happen, please file a bug.", spec.Number, existing.Number)
+		return fmt.Errorf("partition numbers did not match (specified %d, got %d). This should not happen, please file a bug", spec.Number, existing.Number)
 	}
 	if spec.StartSector != nil && *spec.StartSector != existing.StartSector {
 		return fmt.Errorf("starting sector did not match (specified %d, got %d)", *spec.StartSector, existing.StartSector)
 	}
-	if spec.GUID != nil && *spec.GUID != "" && strings.ToLower(*spec.GUID) != strings.ToLower(existing.GUID) {
+	if spec.GUID != nil && *spec.GUID != "" && !strings.EqualFold(*spec.GUID, existing.GUID) {
 		return fmt.Errorf("GUID did not match (specified %q, got %q)", *spec.GUID, existing.GUID)
 	}
-	if spec.TypeGUID != nil && *spec.TypeGUID != "" && strings.ToLower(*spec.TypeGUID) != strings.ToLower(existing.TypeGUID) {
+	if spec.TypeGUID != nil && *spec.TypeGUID != "" && !strings.EqualFold(*spec.TypeGUID, existing.TypeGUID) {
 		return fmt.Errorf("type GUID did not match (specified %q, got %q)", *spec.TypeGUID, existing.TypeGUID)
 	}
 	if spec.Label != nil && *spec.Label != existing.Label {
@@ -220,8 +220,8 @@ func parseSgdiskPretend(sgdiskOut string, partitionNumbers []int) (map[int]sgdis
 	if len(partitionNumbers) == 0 {
 		return nil, nil
 	}
-	startRegex := regexp.MustCompile("^First sector: (\\d*) \\(.*\\)$")
-	endRegex := regexp.MustCompile("^Last sector: (\\d*) \\(.*\\)$")
+	startRegex := regexp.MustCompile(`^First sector: (\\d*) \\(.*\\)$`)
+	endRegex := regexp.MustCompile(`^Last sector: (\\d*) \\(.*\\)$`)
 	const (
 		START             = iota
 		END               = iota
@@ -376,7 +376,7 @@ func (s stage) partitionDisk(dev types.Disk, devAlias string) error {
 				part.StartSector = &info.StartSector
 				op.CreatePartition(part)
 			} else {
-				return fmt.Errorf("Partition %d didn't match: %v", part.Number, matchErr)
+				return fmt.Errorf("partition %d didn't match: %v", part.Number, matchErr)
 			}
 		case exists && shouldExist && wipeEntry && !matches:
 			s.Logger.Info("partition %d did not meet specifications, wiping partition entry and recreating", part.Number)
@@ -384,7 +384,7 @@ func (s stage) partitionDisk(dev types.Disk, devAlias string) error {
 			op.CreatePartition(part)
 		default:
 			// unfortunatey, golang doesn't check that all cases are handled exhaustively
-			return fmt.Errorf("Unreachable code reached when processing partition %d. golang--", part.Number)
+			return fmt.Errorf("unreachable code reached when processing partition %d. golang--", part.Number)
 		}
 	}
 

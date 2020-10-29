@@ -20,17 +20,12 @@ import (
 	"testing"
 
 	"github.com/coreos/ignition/v2/internal/exec/util"
-	"github.com/coreos/ignition/v2/internal/log"
 )
 
 type pathWrapper string
 
 func (pw pathWrapper) getPath() string {
 	return string(pw)
-}
-
-func (pw pathWrapper) create(l *log.Logger, u util.Util) error {
-	return nil
 }
 
 func TestEntrySort(t *testing.T) {

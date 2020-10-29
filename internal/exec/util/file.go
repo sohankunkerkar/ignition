@@ -47,17 +47,6 @@ type FetchOp struct {
 	Node         types.Node
 }
 
-// newHashedReader returns a new ReadCloser that also writes to the provided hash.
-func newHashedReader(reader io.ReadCloser, hasher hash.Hash) io.ReadCloser {
-	return struct {
-		io.Reader
-		io.Closer
-	}{
-		Reader: io.TeeReader(reader, hasher),
-		Closer: reader,
-	}
-}
-
 func newFetchOp(l *log.Logger, node types.Node, contents types.Resource) (FetchOp, error) {
 	var expectedSum []byte
 
@@ -68,7 +57,7 @@ func newFetchOp(l *log.Logger, node types.Node, contents types.Resource) (FetchO
 
 	hasher, err := util.GetHasher(contents.Verification)
 	if err != nil {
-		l.Crit("Error verifying file %q: %v", node.Path, err)
+		l.Crit("error verifying file %q: %v", node.Path, err)
 		return FetchOp{}, err
 	}
 
@@ -78,7 +67,7 @@ func newFetchOp(l *log.Logger, node types.Node, contents types.Resource) (FetchO
 		_, expectedSumString, _ := util.HashParts(contents.Verification)
 		expectedSum, err = hex.DecodeString(expectedSumString)
 		if err != nil {
-			l.Crit("Error parsing verification string %q: %v", expectedSumString, err)
+			l.Crit("error parsing verification string %q: %v", expectedSumString, err)
 			return FetchOp{}, err
 		}
 	}
@@ -139,7 +128,7 @@ func (u Util) WriteLink(s types.Link) error {
 	path := s.Path
 
 	if err := MkdirForFile(path); err != nil {
-		return fmt.Errorf("Could not create leading directories: %v", err)
+		return fmt.Errorf("could not create leading directories: %v", err)
 	}
 
 	if s.Hard != nil && *s.Hard {
@@ -151,7 +140,7 @@ func (u Util) WriteLink(s types.Link) error {
 	}
 
 	if err := os.Symlink(s.Target, path); err != nil {
-		return fmt.Errorf("Could not create symlink: %v", err)
+		return fmt.Errorf("could not create symlink: %v", err)
 	}
 
 	if err := u.SetPermissions(nil, s.Node); err != nil {
@@ -232,7 +221,7 @@ func (u Util) PerformFetch(f FetchOp) error {
 		}
 		defer targetFile.Close()
 
-		if _, err = tmp.Seek(0, os.SEEK_SET); err != nil {
+		if _, err = tmp.Seek(0, io.SeekStart); err != nil {
 			return err
 		}
 		if _, err = io.Copy(targetFile, tmp); err != nil {
@@ -336,11 +325,11 @@ func (u Util) ResolveNodeUidAndGid(n types.Node, defaultUid, defaultGid int) (in
 func (u Util) getUserID(name string) (int, error) {
 	usr, err := u.userLookup(name)
 	if err != nil {
-		return 0, fmt.Errorf("No such user %q: %v", name, err)
+		return 0, fmt.Errorf("no such user %q: %v", name, err)
 	}
 	uid, err := strconv.ParseInt(usr.Uid, 0, 0)
 	if err != nil {
-		return 0, fmt.Errorf("Couldn't parse uid %q: %v", usr.Uid, err)
+		return 0, fmt.Errorf("couldn't parse uid %q: %v", usr.Uid, err)
 	}
 	return int(uid), nil
 }
@@ -348,11 +337,11 @@ func (u Util) getUserID(name string) (int, error) {
 func (u Util) getGroupID(name string) (int, error) {
 	g, err := u.groupLookup(name)
 	if err != nil {
-		return 0, fmt.Errorf("No such group %q: %v", name, err)
+		return 0, fmt.Errorf("no such group %q: %v", name, err)
 	}
 	gid, err := strconv.ParseInt(g.Gid, 0, 0)
 	if err != nil {
-		return 0, fmt.Errorf("Couldn't parse gid %q: %v", g.Gid, err)
+		return 0, fmt.Errorf("couldn't parse gid %q: %v", g.Gid, err)
 	}
 	return int(gid), nil
 }
