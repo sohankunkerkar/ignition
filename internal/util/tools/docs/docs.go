@@ -41,8 +41,8 @@ type sectionState int
 
 const (
 	notInSection     sectionState = 0
-	expectingSection              = 1
-	inSection                     = 2
+	expectingSection sectionState = 1
+	inSection        sectionState = 2
 )
 
 func main() {
@@ -66,8 +66,8 @@ func main() {
 			return nil
 		}
 
-		fileContents, err := ioutil.ReadFile(path)
-		if err != nil {
+		fileContents, readErr := ioutil.ReadFile(path)
+		if readErr != nil {
 			return err
 		}
 

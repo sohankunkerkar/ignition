@@ -103,7 +103,7 @@ func getRootPartition(partitions []*types.Partition) *types.Partition {
 
 func mountPartition(ctx context.Context, p *types.Partition) error {
 	if p.MountPath == "" || p.Device == "" {
-		return fmt.Errorf("Invalid partition for mounting %+v", p)
+		return fmt.Errorf("invalid partition for mounting %+v", p)
 	}
 	_, err := run(ctx, "mount", "-t", p.FilesystemType, p.Device, p.MountPath)
 	return err
@@ -128,7 +128,7 @@ func runGetExit(cmd string, args ...string) (int, string, error) {
 
 func umountPartition(p *types.Partition) error {
 	if p.MountPath == "" || p.Device == "" {
-		return fmt.Errorf("Invalid partition for unmounting %+v", p)
+		return fmt.Errorf("invalid partition for unmounting %+v", p)
 	}
 
 	// sometimes umount returns exit status 32 when it succeeds. Retry in this
@@ -156,12 +156,12 @@ func runIgnition(t *testing.T, ctx context.Context, stage, root, cwd string, app
 		"-root", root, "-log-to-stdout", "--config-cache", filepath.Join(cwd, "ignition.json")}
 	cmd := exec.CommandContext(ctx, "ignition", args...)
 	t.Log("ignition", args)
-	cmd.Dir = cwd
-	cmd.Env = append(os.Environ(), appendEnv...)
-	out, err := cmd.CombinedOutput()
 	if cmd != nil && cmd.Process != nil {
 		t.Logf("PID: %d", cmd.Process.Pid)
 	}
+	cmd.Dir = cwd
+	cmd.Env = append(os.Environ(), appendEnv...)
+	out, err := cmd.CombinedOutput()
 	t.Logf("Ignition output:\n%s", string(out))
 	if strings.Contains(string(out), "panic") {
 		return fmt.Errorf("ignition panicked")
@@ -223,7 +223,7 @@ func setupDisk(ctx context.Context, disk *types.Disk, diskIndex int, imageSize i
 
 	// Avoid race with kernel by waiting for loopDevice creation to complete
 	if _, err = run(ctx, "udevadm", "settle"); err != nil {
-		return fmt.Errorf("Settling devices: %v", err)
+		return fmt.Errorf("settling devices: %v", err)
 	}
 
 	if err = createPartitionTable(ctx, disk.Device, disk.Partitions); err != nil {
@@ -297,7 +297,7 @@ func formatPartition(ctx context.Context, partition *types.Partition) error {
 			partition.FilesystemType == "" {
 			return nil
 		}
-		return fmt.Errorf("Unknown partition: %v", partition.FilesystemType)
+		return fmt.Errorf("unknown partition: %v", partition.FilesystemType)
 	}
 
 	if partition.FilesystemLabel != "" {
@@ -367,7 +367,7 @@ func createPartitionTable(ctx context.Context, imageFile string, partitions []*t
 	}
 	if len(hybrids) > 0 {
 		if len(hybrids) > 3 {
-			return fmt.Errorf("Can't have more than three hybrids")
+			return fmt.Errorf("can't have more than three hybrids")
 		} else {
 			opts = append(opts, fmt.Sprintf("-h=%s", intJoin(hybrids, ":")))
 		}
@@ -392,7 +392,7 @@ func updateTypeGUID(partition *types.Partition) error {
 
 	partition.TypeGUID = partitionTypes[partition.TypeCode]
 	if partition.TypeGUID == "" {
-		return fmt.Errorf("Unknown TypeCode: %s", partition.TypeCode)
+		return fmt.Errorf("unknown TypeCode: %s", partition.TypeCode)
 	}
 	return nil
 }
@@ -403,16 +403,6 @@ func intJoin(ints []int, delimiter string) string {
 		strArr = append(strArr, strconv.Itoa(i))
 	}
 	return strings.Join(strArr, delimiter)
-}
-
-func removeEmpty(strings []string) []string {
-	var r []string
-	for _, str := range strings {
-		if str != "" {
-			r = append(r, str)
-		}
-	}
-	return r
 }
 
 func createFilesForPartition(ctx context.Context, partition *types.Partition) (err error) {

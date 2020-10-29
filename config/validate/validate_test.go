@@ -28,8 +28,8 @@ import (
 )
 
 var (
-	dummy = errors.New("dummy error")
-	empty = path.New("json")
+	errDummy = errors.New("dummy error")
+	empty    = path.New("json")
 )
 
 // mkReport generates reports with a single error with the specified context, line, col and kind
@@ -55,7 +55,7 @@ func mangleReport(r *report.Report) {
 type test struct{}
 
 func (t test) Validate(c path.ContextPath) (r report.Report) {
-	r.AddOnError(c, dummy)
+	r.AddOnError(c, errDummy)
 	return
 }
 
@@ -106,51 +106,51 @@ func TestValidateWithContext(t *testing.T) {
 		},
 		{
 			in:  test{},
-			out: mkReport(dummy, empty, report.Error, 0, 0),
+			out: mkReport(errDummy, empty, report.Error, 0, 0),
 		},
 		{
 			in:    test{},
 			inRaw: "{   }",
-			out:   mkReport(dummy, empty, report.Error, 1, 2),
+			out:   mkReport(errDummy, empty, report.Error, 1, 2),
 		},
 		{
 			in:    struct{}{},
 			inRaw: `{"foo":"bar"}`,
-			out:   mkReport(fmt.Errorf("Unused key foo"), path.New("json", tree.Key("foo")), report.Warn, 1, 2),
+			out:   mkReport(fmt.Errorf("unused key foo"), path.New("json", tree.Key("foo")), report.Warn, 1, 2),
 		},
 		{
 			in:    test2{},
 			inRaw: `{"foobar": {}}`,
-			out:   mkReport(dummy, path.New("json", "foobar"), report.Error, 1, 13),
+			out:   mkReport(errDummy, path.New("json", "foobar"), report.Error, 1, 13),
 		},
 		{
 			in: test3{},
 		},
 		{
 			in: test3{
-				NoDups: make([]testDup, 1, 1),
+				NoDups: make([]testDup, 1),
 			},
 		},
 		{
 			in: test3{
-				NoDups: make([]testDup, 2, 2),
+				NoDups: make([]testDup, 2),
 			},
 			out: mkReport(ignerrors.ErrDuplicate, path.New("json", "dups", 1), report.Error, 0, 0),
 		},
 		{
 			in: test4{
-				Ignored: make([]testDup, 2, 2),
+				Ignored: make([]testDup, 2),
 			},
 		},
 		{
 			in: test5{
-				NoDups1: make([]testDup, 1, 1),
+				NoDups1: make([]testDup, 1),
 			},
 		},
 		{
 			in: test5{
-				NoDups1: make([]testDup, 1, 1),
-				NoDups2: make([]testDup, 1, 1),
+				NoDups1: make([]testDup, 1),
+				NoDups2: make([]testDup, 1),
 			},
 			out: mkReport(ignerrors.ErrDuplicate, path.New("json", "dups2", 0), report.Error, 0, 0),
 		},
