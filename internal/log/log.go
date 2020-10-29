@@ -126,7 +126,7 @@ func QuotedCmd(cmd *exec.Cmd) string {
 		return fmt.Sprintf("%q", cmd.Path)
 	}
 
-	var q []string
+	q := make([]string, len(cmd.Args))
 	for _, s := range cmd.Args {
 		q = append(q, fmt.Sprintf("%q", s))
 	}
