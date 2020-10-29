@@ -20,6 +20,13 @@ addons:
     packages:
     - libblkid-dev
 
+before_script:
+  - go install -mod vendor github.com/golangci/golangci-lint/cmd/golangci-lint
+  - go get honnef.co/go/tools/cmd/staticcheck                                       
 script:
   - ./test
   - docker build -f Dockerfile.validate .
+  - golangci-lint run       # run a bunch of code checkers/linters in parallel
+  - go test -race -coverprofile=coverage.txt -covermode=atomic  # Run all the tests with the race detector enabled
+  - go vet ./...            # go vet is the official Go static analyzer   
+  - staticchek ./...               
