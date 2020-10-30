@@ -185,7 +185,7 @@ func outer(t *testing.T, test types.Test, negativeTests bool) error {
 			}
 		}
 		test.Out[i].SetOffsets()
-
+		disk := disk
 		if err = setupDisk(ctx, &disk, i, imageSize, tmpDirectory); err != nil {
 			return err
 		}

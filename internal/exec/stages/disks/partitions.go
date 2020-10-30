@@ -53,8 +53,8 @@ func (s stage) createPartitions(config types.Config) error {
 	}
 
 	for _, dev := range config.Storage.Disks {
+		dev := dev
 		devAlias := util.DeviceAlias(string(dev.Device))
-
 		err := s.Logger.LogOp(func() error {
 			return s.partitionDisk(dev, devAlias)
 		}, "partitioning %q", devAlias)

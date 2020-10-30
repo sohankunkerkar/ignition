@@ -17,7 +17,7 @@ package fixtures
 // This file contains base64-encoded bzipped filesystem images for testing.
 
 var (
-	// 64 MB ZFS image
+	// ZFS image is 64 MB
 	ZFS = `QlpoOTFBWSZTWZBSVbgAAtJ/////////////////////////////////////////////4DEffSAA
 AEilUUEQBUJVUAUUoAUBVSkUKVUhIUUKkAKCJQClFAVJVVUQRBBIoAAoAoqqkqUUKqCpKoACIIIU
 AJCRQlAAEqJMABMAATAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABJgAJgACYAAAAAAAAAAAA
@@ -241,7 +241,7 @@ BPQgs8tQ4+mHyaOOoIIsa2I5dPNiLD4ls9uTAg/vLDb7L8GsAt3C0FdQ2GZOVCsSTqQEFeHVYYrH
 gJ4QgF2K+jMdyZ4Z//Xq2X4BFOmZAFIFQIGGJTas7tpWGB7dOuaojse1nhOmFxOa3AJeEekBGuT3
 vTW28DenW12S28fZCuMMEQUHSaZgFLnVNuRgggQiITzuq9x/2rpl8b/4u5IpwoSBj2/TAA==`
 
-	// 64 MB ext4 image with residual ZFS superblocks and an example
+	// Ext4ZFS image is 64 MB with residual ZFS superblocks and an example
 	// file at /foo/bar
 	Ext4ZFS = `QlpoOTFBWSZTWdFsGMkABEF/////////////////////////////////////////////4EDffAKq
 qJSd4eePKPgAAAabCKUqpVVBRCUhPrFRKiCUiUgoQARIEqVKhQiAUVVUVJFRVbwwOKVKoRUhFUAq

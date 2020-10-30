@@ -137,6 +137,7 @@ func (s *stage) createLuks(config types.Config) error {
 				return fmt.Errorf("failed to resolve keyfile %q: %v", f.Path, err)
 			}
 			for _, op := range fetchOps {
+				op := op
 				if err := s.Util.Logger.LogOp(
 					func() error {
 						return s.Util.PerformFetch(op)

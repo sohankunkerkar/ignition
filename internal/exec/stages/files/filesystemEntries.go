@@ -201,6 +201,7 @@ func (tmp fileEntry) create(l *log.Logger, u util.Util) error {
 		if op.Append {
 			msg = "appending to file %q"
 		}
+		op := op
 		if err := l.LogOp(
 			func() error {
 				return u.PerformFetch(op)
