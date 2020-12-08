@@ -224,7 +224,7 @@ func setupDisk(ctx context.Context, disk *types.Disk, diskIndex int, imageSize i
 	loopdev := disk.Device
 	defer func() {
 		if err != nil {
-			destroyDevice(loopdev)
+			_ = destroyDevice(loopdev)
 		}
 	}()
 

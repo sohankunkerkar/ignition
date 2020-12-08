@@ -26,7 +26,7 @@ import (
 	"github.com/coreos/vcontext/report"
 	"github.com/vmware/vmw-guestinfo/rpcvmx"
 	"github.com/vmware/vmw-guestinfo/vmcheck"
-	"github.com/vmware/vmw-ovflib"
+	ovf "github.com/vmware/vmw-ovflib"
 )
 
 func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
