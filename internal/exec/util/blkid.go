@@ -124,7 +124,7 @@ func cResultToErr(res C.result_t, device string) error {
 	case C.RESULT_BAD_SECTOR_SIZE:
 		return fmt.Errorf("logical sector size for %q was not a multiple of 512", device)
 	default:
-		return fmt.Errorf("Unknown error while handling %q. err code: %d", device, res)
+		return fmt.Errorf("unknown error while handling %q. err code: %d", device, res)
 	}
 }
 
@@ -188,4 +188,16 @@ func filesystemLookup(device string, allowAmbivalent bool, fieldName string) (st
 		return "", err
 	}
 	return string(buf[:bytes.IndexByte(buf[:], 0)]), nil
+}
+
+func GetUdfBlockDevice() (string, error) {
+	var dev *C.char
+	if err := cResultToErr(C.blkid_get_block_device_with_udf(dev), C.GoString(dev)); err != nil {
+		return "", err
+	}
+
+	if len(C.GoString(dev)) == 0 {
+		return "", fmt.Errorf("couldn't get block device with filesystem set to udf")
+	}
+	return C.GoString(dev), nil
 }

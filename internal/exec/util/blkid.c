@@ -248,3 +248,34 @@ static result_t extract_part_info(blkid_partition part, struct partition_info *i
 
 	return RESULT_OK;
 }
+
+// blkid_get_block_device_with_udf fethces the block 
+// device having FSTYPE set to `udf`. Assuming there
+// can only be one `udf` fstype and it's always the
+// right one.
+result_t blkid_get_block_device_with_udf(const char *device){
+	blkid_dev_iterate	iter;
+	blkid_dev		dev;
+	blkid_cache cache = NULL;
+	int ret;
+	const char *search_type = "TYPE";
+	const char *search_value = "udf";
+    
+   if ((ret = blkid_get_cache(&cache,"/dev/null") != 0))
+       return RESULT_LOOKUP_FAILED;
+
+   if ((ret = blkid_probe_all(cache) != 0))
+       return RESULT_LOOKUP_FAILED;
+
+	iter = blkid_dev_iterate_begin(cache);
+	blkid_dev_set_search(iter, search_type, search_value);
+	while (blkid_dev_next(iter, &dev) == 0) {
+		dev = blkid_verify(cache, dev);
+		if (!dev)
+			continue;
+	    device = blkid_dev_devname(dev);
+	    return RESULT_OK;
+	}
+	blkid_dev_iterate_end(iter);
+   return RESULT_OK;
+}
