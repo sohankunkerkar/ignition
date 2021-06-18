@@ -70,6 +70,7 @@ func FetchFromOvfDevice(f *resource.Fetcher, ovfFsTypes []string) (types.Config,
 
 	logger := f.Logger
 	logger.Debug("waiting for config DVD...")
+
 	waitForCdrom(logger, devicePath)
 
 	fsType, err := checkOvfFsType(logger, devicePath, ovfFsTypes)

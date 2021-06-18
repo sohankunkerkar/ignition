@@ -189,3 +189,20 @@ func filesystemLookup(device string, allowAmbivalent bool, fieldName string) (st
 	}
 	return string(buf[:bytes.IndexByte(buf[:], 0)]), nil
 }
+
+// GetUdfBlockDevices returns a slice of the block devices with filesystem set to udf
+func GetUdfBlockDevices() ([]string, error) {
+	var dev C.struct_block_device_list
+	res := C.blkid_get_block_devices_with_udf(&dev)
+
+	if res == C.RESULT_LOOKUP_FAILED || res == C.RESULT_OVERFLOW || res == C.RESULT_FAIL_TO_RETRIEVE || res == C.RESULT_MAX_BLOCK_DEVICES || res == C.RESULT_NO_BLOCK_DEVICE_FOUND {
+		return nil, fmt.Errorf("failed to retrieve block devices with filesystem set to udf")
+	}
+
+	length := int(dev.length)
+	blkDeviceList := make([]string, length)
+	for i := 0; i < length; i++ {
+		blkDeviceList[i] = C.GoString(&dev.path[i][0])
+	}
+	return blkDeviceList, nil
+}
