@@ -248,3 +248,37 @@ static result_t extract_part_info(blkid_partition part, struct partition_info *i
 
 	return RESULT_OK;
 }
+
+// blkid_get_block_devices_with_udf fetches the block devices with FSTYPE set to udf.
+result_t blkid_get_block_devices_with_udf(struct block_device_list *device){
+	blkid_dev_iterate iter;
+	blkid_dev dev;
+	blkid_cache cache = NULL;
+	int err, count = 0;
+	const char *ctmp = NULL;
+    
+    if ((err = blkid_get_cache(&cache,"/dev/null") != 0))
+       return RESULT_FAIL_TO_RETRIEVE;
+
+    if ((err = blkid_probe_all(cache) != 0))
+       return RESULT_FAIL_TO_RETRIEVE;
+
+	iter = blkid_dev_iterate_begin(cache);
+	
+	blkid_dev_set_search(iter, "TYPE", "udf");
+	
+	while (blkid_dev_next(iter, &dev) == 0) {
+		dev = blkid_verify(cache, dev);
+		if (!dev)
+			continue;
+		ctmp = blkid_dev_devname(dev);
+	    err = checked_copy(device->path[count], ctmp, MAX_BLOCK_DEVICE_PATH_LEN);
+	    if (err)
+		  return err;
+		count++;
+	}
+	blkid_dev_iterate_end(iter);
+    device->length = count;
+   
+    return RESULT_OK;
+}
