@@ -191,13 +191,10 @@ func filesystemLookup(device string, allowAmbivalent bool, fieldName string) (st
 }
 
 func GetUdfBlockDevice() (string, error) {
-	var dev *C.char
-	if err := cResultToErr(C.blkid_get_block_device_with_udf(dev), C.GoString(dev)); err != nil {
-		return "", err
-	}
+	device := C.blkid_get_block_device_with_udf()
 
-	if len(C.GoString(dev)) == 0 {
-		return "", fmt.Errorf("couldn't get block device with filesystem set to udf")
+	if len(C.GoString(device)) == 0 {
+		return "", fmt.Errorf("couldn't find the block device with filesystem set to udf")
 	}
-	return C.GoString(dev), nil
+	return C.GoString(device), nil
 }

@@ -253,7 +253,7 @@ static result_t extract_part_info(blkid_partition part, struct partition_info *i
 // device having FSTYPE set to `udf`. Assuming there
 // can only be one `udf` fstype and it's always the
 // right one.
-result_t blkid_get_block_device_with_udf(const char *device){
+char *blkid_get_block_device_with_udf(){
 	blkid_dev_iterate	iter;
 	blkid_dev		dev;
 	blkid_cache cache = NULL;
@@ -262,10 +262,10 @@ result_t blkid_get_block_device_with_udf(const char *device){
 	const char *search_value = "udf";
     
    if ((ret = blkid_get_cache(&cache,"/dev/null") != 0))
-       return RESULT_LOOKUP_FAILED;
+       return NULL;
 
    if ((ret = blkid_probe_all(cache) != 0))
-       return RESULT_LOOKUP_FAILED;
+       return NULL;
 
 	iter = blkid_dev_iterate_begin(cache);
 	blkid_dev_set_search(iter, search_type, search_value);
@@ -273,9 +273,8 @@ result_t blkid_get_block_device_with_udf(const char *device){
 		dev = blkid_verify(cache, dev);
 		if (!dev)
 			continue;
-	    device = blkid_dev_devname(dev);
-	    return RESULT_OK;
+	    return blkid_dev_devname(dev);
 	}
 	blkid_dev_iterate_end(iter);
-   return RESULT_OK;
+   return NULL;
 }
