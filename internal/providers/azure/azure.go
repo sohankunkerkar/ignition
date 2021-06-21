@@ -71,7 +71,18 @@ func FetchFromOvfDevice(f *resource.Fetcher, ovfFsTypes []string) (types.Config,
 	logger := f.Logger
 	logger.Debug("waiting for config DVD...")
 
-	waitForCdrom(logger, devicePath)
+	// Look for the gen2 settings if avaialble
+	// else fall back to gen1 settings
+	device, err := execUtil.GetUdfBlockDevices()
+	if err != nil {
+		logger.Info("falling back to gen1 settings")
+		waitForCdrom(logger, devicePath)
+	} else if len(device) > 0 {
+		for _, dev := range device {
+			devicePath = dev
+			waitForCdrom(logger, devicePath)
+		}
+	}
 
 	fsType, err := checkOvfFsType(logger, devicePath, ovfFsTypes)
 	if err != nil {
@@ -108,8 +119,13 @@ func FetchFromOvfDevice(f *resource.Fetcher, ovfFsTypes []string) (types.Config,
 }
 
 func waitForCdrom(logger *log.Logger, devicePath string) {
+	s := 10
 	for !isCdromPresent(logger, devicePath) {
+		if s == 0 {
+			break
+		}
 		time.Sleep(time.Second)
+		s--
 	}
 }
 
