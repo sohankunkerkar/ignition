@@ -71,6 +71,13 @@ func FetchFromOvfDevice(f *resource.Fetcher, ovfFsTypes []string) (types.Config,
 	logger := f.Logger
 	logger.Debug("waiting for config DVD...")
 
+	device, err := execUtil.GetUdfBlockDevice()
+	if err != nil {
+		logger.Debug("falling back to gen1 config path")
+	} else {
+		logger.Info("VM configured with gen2 settings")
+		devicePath = device
+	}
 	waitForCdrom(logger, devicePath)
 
 	fsType, err := checkOvfFsType(logger, devicePath, ovfFsTypes)
