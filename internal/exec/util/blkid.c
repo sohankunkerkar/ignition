@@ -14,6 +14,7 @@
 
 #include <blkid/blkid.h>
 #include "blkid.h"
+#include <stdlib.h>
 
 // blkid_free_probe is safe to call with NULL pointers
 static inline void _free_probe(blkid_probe *pr) { if (pr) blkid_free_probe(*pr); }
@@ -256,6 +257,9 @@ result_t blkid_get_block_devices_with_udf(struct block_device_list *device){
 	blkid_cache cache = NULL;
 	int err, count = 0;
 	const char *ctmp = NULL;
+	const char *search_type = "TYPE";
+	const char *search_value = "ext4";
+	device = malloc(sizeof(struct block_device_list));
     
     if ((err = blkid_get_cache(&cache,"/dev/null") != 0))
        return RESULT_FAIL_TO_RETRIEVE;
@@ -265,7 +269,7 @@ result_t blkid_get_block_devices_with_udf(struct block_device_list *device){
 
 	iter = blkid_dev_iterate_begin(cache);
 	
-	blkid_dev_set_search(iter, "TYPE", "udf");
+	blkid_dev_set_search(iter, search_type, search_value);
 	
 	while (blkid_dev_next(iter, &dev) == 0) {
 		dev = blkid_verify(cache, dev);
@@ -276,9 +280,11 @@ result_t blkid_get_block_devices_with_udf(struct block_device_list *device){
 	    if (err)
 		  return err;
 		count++;
+		if (count > MAX_BLOCK_DEVICES)
+		  return RESULT_MAX_BLOCK_DEVICES;
 	}
 	blkid_dev_iterate_end(iter);
-    device->length = count;
+	device->length = count;
    
     return RESULT_OK;
 }

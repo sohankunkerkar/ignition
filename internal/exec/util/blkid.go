@@ -195,7 +195,7 @@ func GetUdfBlockDevices() ([]string, error) {
 	var dev C.struct_block_device_list
 	res := C.blkid_get_block_devices_with_udf(&dev)
 
-	if res == C.RESULT_LOOKUP_FAILED || res == C.RESULT_OVERFLOW || res == C.RESULT_FAIL_TO_RETRIEVE {
+	if res == C.RESULT_LOOKUP_FAILED || res == C.RESULT_OVERFLOW || res == C.RESULT_FAIL_TO_RETRIEVE || res == C.RESULT_MAX_BLOCK_DEVICES {
 		return nil, fmt.Errorf("failed to retrieve block devices with filesystem set to udf")
 	}
 
