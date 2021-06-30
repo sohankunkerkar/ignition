@@ -8,14 +8,13 @@ import (
 
 func main() {
 	blkDeviceList, err := util.GetUdfBlockDevices()
-	if err == nil {
-		fmt.Println("Error")
+	if err != nil {
+		fmt.Println(err)
 	}
 
-	fmt.Printf("length of a list: %d\n", len(blkDeviceList))
+	fmt.Printf("length of the list: %d\n", len(blkDeviceList))
 
 	for _, blk := range blkDeviceList {
-		fmt.Printf("Device list : %s", blk)
+		fmt.Printf("Device name : %s", blk)
 	}
-	fmt.Println("Sohan")
 }

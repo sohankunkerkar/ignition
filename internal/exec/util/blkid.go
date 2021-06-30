@@ -200,11 +200,9 @@ func GetUdfBlockDevices() ([]string, error) {
 	}
 
 	length := int(dev.length)
-	slice := (*[1 << 28]C.char)(unsafe.Pointer(&dev.path))[:length:length]
-
 	blkDeviceList := make([]string, length)
-	for i, s := range slice {
-		blkDeviceList[i] = C.GoString(&s)
+	for i := 0; i < length; i++ {
+		blkDeviceList[i] = C.GoString(&dev.path[i][0])
 	}
 	return blkDeviceList, nil
 }
