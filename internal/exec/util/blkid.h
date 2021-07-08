@@ -67,6 +67,6 @@ result_t blkid_get_logical_sector_size(const char *device, int *ret_sector_size)
 // WARNING part_num may not be what you expect. see the .c file's comment for why
 result_t blkid_get_partition(const char *device, int part_num, struct partition_info *info);
 
-result_t blkid_get_block_devices_with_udf(const char *fstype, struct block_device_list *device);
+result_t blkid_get_block_devices(const char *fstype, struct block_device_list *device);
 
 #endif // _BLKID_H_

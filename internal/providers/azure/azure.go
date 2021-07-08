@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/coreos/ignition/v2/config/v3_4_experimental/types"
-	"github.com/coreos/ignition/v2/internal/distro"
 	execUtil "github.com/coreos/ignition/v2/internal/exec/util"
 	"github.com/coreos/ignition/v2/internal/log"
 	"github.com/coreos/ignition/v2/internal/providers/util"
@@ -35,8 +34,7 @@ import (
 )
 
 const (
-	configDeviceID = "ata-Virtual_CD"
-	configPath     = "/CustomData.bin"
+	configPath = "/CustomData.bin"
 )
 
 // These constants come from <cdrom.h>.
@@ -66,30 +64,17 @@ func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
 // FetchFromOvfDevice has the return signature of platform.NewFetcher. It is
 // wrapped by this and AzureStack packages.
 func FetchFromOvfDevice(f *resource.Fetcher, ovfFsTypes []string) (types.Config, report.Report, error) {
-	devicePath := filepath.Join(distro.DiskByIDDir(), configDeviceID)
-
+	var devicePath string
 	logger := f.Logger
 	logger.Debug("waiting for config DVD...")
-<<<<<<< HEAD
-	waitForCdrom(logger, devicePath)
-=======
-	// Look for the gen2 settings if avaialble
-	// else fall back to gen1 settings
+
 	device, err := execUtil.GetUdfBlockDevices()
 	if err != nil {
-		logger.Info("falling back to gen1 settings")
-		waitForCdrom(logger, devicePath)
+		return types.Config{}, report.Report{}, fmt.Errorf("failed to retrieve block devices with FSTYPE=UDF: %v", err)
 	} else if len(device) > 0 {
-		for _, dev := range device {
-			devicePath = dev
+		for _, devicePath := range device {
 			waitForCdrom(logger, devicePath)
 		}
-	}
->>>>>>> f49ecd37 (providers/azure: add support for azure gen2 VMs)
-
-	fsType, err := checkOvfFsType(logger, devicePath, ovfFsTypes)
-	if err != nil {
-		return types.Config{}, report.Report{}, err
 	}
 
 	mnt, err := ioutil.TempDir("", "ignition-azure")
@@ -100,7 +85,7 @@ func FetchFromOvfDevice(f *resource.Fetcher, ovfFsTypes []string) (types.Config,
 
 	logger.Debug("mounting config device")
 	if err := logger.LogOp(
-		func() error { return unix.Mount(devicePath, mnt, fsType, unix.MS_RDONLY, "") },
+		func() error { return unix.Mount(devicePath, mnt, "udf", unix.MS_RDONLY, "") },
 		"mounting %q at %q", devicePath, mnt,
 	); err != nil {
 		return types.Config{}, report.Report{}, fmt.Errorf("failed to mount device %q at %q: %v", devicePath, mnt, err)
@@ -165,17 +150,4 @@ func isCdromPresent(logger *log.Logger, devicePath string) bool {
 	}
 
 	return (status == CDS_DISC_OK)
-}
-
-func checkOvfFsType(logger *log.Logger, devicePath string, fsTypes []string) (string, error) {
-	fs, err := execUtil.GetFilesystemInfo(devicePath, false)
-	if err != nil {
-		return fs.Type, fmt.Errorf("failed to detect filesystem on ovf device %q: %v", devicePath, err)
-	}
-	for _, f := range fsTypes {
-		if f == fs.Type {
-			return fs.Type, nil
-		}
-	}
-	return fs.Type, fmt.Errorf("filesystem %q is not a supported ovf device", fs.Type)
 }

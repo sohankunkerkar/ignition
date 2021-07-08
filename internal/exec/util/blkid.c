@@ -20,11 +20,11 @@ static inline void _free_probe(blkid_probe *pr) { if (pr) blkid_free_probe(*pr);
 #define _cleanup_probe_ __attribute__((cleanup(_free_probe)))
 
 // To make sure the cache is freed in all error paths
-static inline void _free_cache(blkid_cache *gcache) { blkid_put_cache(gcache); }
+static inline blkid_cache _free_cache(blkid_cache *gcache) { blkid_put_cache(*gcache); }
 #define _cleanup_cache_ __attribute__((cleanup(_free_cache)))
 
 // To make sure the iterator is freed in the error cases
-static inline void _free_iterator(blkid_dev_iterate *iter) { blkid_dev_iterate_end(iter);}
+static inline void _free_iterator(blkid_dev_iterate *iter) { blkid_dev_iterate_end(*iter);}
 #define _cleanup_iterator_ __attribute__((cleanup(_free_iterator)))
 
 static result_t extract_part_info(blkid_partition part, struct partition_info *info, long sector_divisor);
@@ -257,7 +257,7 @@ static result_t extract_part_info(blkid_partition part, struct partition_info *i
 	return RESULT_OK;
 }
 
-// blkid_get_block_devices_with_udf fetches the block devices with FSTYPE set to udf.
+// blkid_get_block_devices fetches block devices with the required FSTYPE
 result_t blkid_get_block_devices(const char *fstype, struct block_device_list *device){
 	blkid_dev_iterate iter;
 	blkid_dev dev;
@@ -265,10 +265,9 @@ result_t blkid_get_block_devices(const char *fstype, struct block_device_list *d
 	int err, count = 0;
 	const char *ctmp = NULL;
     
-	if ((err = blkid_get_cache(&cache, "/dev/null") != 0))
+	blkid_cache gcache _cleanup_cache_ = NULL;
+    if ((err = blkid_get_cache(&gcache, "/dev/null") != 0))
 	   return RESULT_GET_CACHE_FAILED;
-    
-	blkid_cache gcache _cleanup_cache_ = blkid_get_cache(&cache, "/dev/null");
 
     if ((err = blkid_probe_all(cache) != 0))
        return RESULT_PROBE_FAILED;
@@ -290,8 +289,8 @@ result_t blkid_get_block_devices(const char *fstype, struct block_device_list *d
 	       return RESULT_MAX_BLOCK_DEVICES;
 	}
 	blkid_dev_iterate_end(iter);
-	blkid_dev_iterate iter _cleanup_iterator_ = blkid_dev_iterate_begin(iter);
+	blkid_dev_iterate iterate _cleanup_iterator_ = blkid_dev_iterate_begin(cache);
+	
 	device->count = count;
-    
 	return RESULT_OK;
 }
