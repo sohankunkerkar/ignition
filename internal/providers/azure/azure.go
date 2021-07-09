@@ -21,12 +21,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/coreos/ignition/v2/config/v3_4_experimental/types"
-	"github.com/coreos/ignition/v2/internal/distro"
 	execUtil "github.com/coreos/ignition/v2/internal/exec/util"
-	"github.com/coreos/ignition/v2/internal/log"
 	"github.com/coreos/ignition/v2/internal/providers/util"
 	"github.com/coreos/ignition/v2/internal/resource"
 
@@ -35,8 +32,7 @@ import (
 )
 
 const (
-	configDeviceID = "ata-Virtual_CD"
-	configPath     = "/CustomData.bin"
+	configPath = "/CustomData.bin"
 )
 
 // These constants come from <cdrom.h>.
@@ -66,29 +62,40 @@ func FetchConfig(f *resource.Fetcher) (types.Config, report.Report, error) {
 // FetchFromOvfDevice has the return signature of platform.NewFetcher. It is
 // wrapped by this and AzureStack packages.
 func FetchFromOvfDevice(f *resource.Fetcher, ovfFsTypes []string) (types.Config, report.Report, error) {
-	devicePath := filepath.Join(distro.DiskByIDDir(), configDeviceID)
-
+	var rawConfig []byte
 	logger := f.Logger
-	logger.Debug("waiting for config DVD...")
-	waitForCdrom(logger, devicePath)
 
-	fsType, err := checkOvfFsType(logger, devicePath, ovfFsTypes)
+	device, err := execUtil.GetBlockDevices(CDS_FSTYPE_UDF)
 	if err != nil {
-		return types.Config{}, report.Report{}, err
+		return types.Config{}, report.Report{}, fmt.Errorf("failed to retrieve block devices with FSTYPE=UDF: %v", err)
+	} else if len(device) > 0 {
+		for i, dev := range device {
+			rawConfig, err = getRawConfig(f, dev)
+			if len(rawConfig) > 0 {
+				break
+			} else if err != nil && i == len(device) {
+				return types.Config{}, report.Report{}, fmt.Errorf("failed to retrieve config: %v", err)
+			}
+		}
 	}
+	return util.ParseConfig(logger, rawConfig)
+}
 
+// getRawConfig returns the config by mounting the given block device
+func getRawConfig(f *resource.Fetcher, devicePath string) ([]byte, error) {
+	logger := f.Logger
 	mnt, err := ioutil.TempDir("", "ignition-azure")
 	if err != nil {
-		return types.Config{}, report.Report{}, fmt.Errorf("failed to create temp directory: %v", err)
+		return nil, fmt.Errorf("failed to create temp directory: %v", err)
 	}
 	defer os.Remove(mnt)
 
 	logger.Debug("mounting config device")
 	if err := logger.LogOp(
-		func() error { return unix.Mount(devicePath, mnt, fsType, unix.MS_RDONLY, "") },
+		func() error { return unix.Mount(devicePath, mnt, CDS_FSTYPE_UDF, unix.MS_RDONLY, "") },
 		"mounting %q at %q", devicePath, mnt,
 	); err != nil {
-		return types.Config{}, report.Report{}, fmt.Errorf("failed to mount device %q at %q: %v", devicePath, mnt, err)
+		return nil, fmt.Errorf("failed to mount device %q at %q: %v", devicePath, mnt, err)
 	}
 	defer func() {
 		_ = logger.LogOp(
@@ -100,62 +107,7 @@ func FetchFromOvfDevice(f *resource.Fetcher, ovfFsTypes []string) (types.Config,
 	logger.Debug("reading config")
 	rawConfig, err := ioutil.ReadFile(filepath.Join(mnt, configPath))
 	if err != nil && !os.IsNotExist(err) {
-		return types.Config{}, report.Report{}, fmt.Errorf("failed to read config: %v", err)
+		return nil, fmt.Errorf("failed to read config: %v", err)
 	}
-
-	return util.ParseConfig(logger, rawConfig)
-}
-
-func waitForCdrom(logger *log.Logger, devicePath string) {
-	for !isCdromPresent(logger, devicePath) {
-		time.Sleep(time.Second)
-	}
-}
-
-func isCdromPresent(logger *log.Logger, devicePath string) bool {
-	logger.Debug("opening config device")
-	device, err := os.Open(devicePath)
-	if err != nil {
-		logger.Info("failed to open config device: %v", err)
-		return false
-	}
-	defer device.Close()
-
-	logger.Debug("getting drive status")
-	status, _, errno := unix.Syscall(
-		unix.SYS_IOCTL,
-		uintptr(device.Fd()),
-		uintptr(CDROM_DRIVE_STATUS),
-		uintptr(0),
-	)
-
-	switch status {
-	case CDS_NO_INFO:
-		logger.Info("drive status: no info")
-	case CDS_NO_DISC:
-		logger.Info("drive status: no disc")
-	case CDS_TRAY_OPEN:
-		logger.Info("drive status: open")
-	case CDS_DRIVE_NOT_READY:
-		logger.Info("drive status: not ready")
-	case CDS_DISC_OK:
-		logger.Info("drive status: OK")
-	default:
-		logger.Err("failed to get drive status: %s", errno.Error())
-	}
-
-	return (status == CDS_DISC_OK)
-}
-
-func checkOvfFsType(logger *log.Logger, devicePath string, fsTypes []string) (string, error) {
-	fs, err := execUtil.GetFilesystemInfo(devicePath, false)
-	if err != nil {
-		return fs.Type, fmt.Errorf("failed to detect filesystem on ovf device %q: %v", devicePath, err)
-	}
-	for _, f := range fsTypes {
-		if f == fs.Type {
-			return fs.Type, nil
-		}
-	}
-	return fs.Type, fmt.Errorf("filesystem %q is not a supported ovf device", fs.Type)
+	return rawConfig, nil
 }
